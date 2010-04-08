@@ -46,34 +46,19 @@
 %# 
 %# END BPS TAGGED BLOCK }}}
 <%PERL>
-# Unsure sane default
-unless ( @$conditions ) {
-    foreach (RT::Queue->ActiveStatusArray()) {
-        push @$conditions, { cond => "Status = '$_'", name => loc($_) };
-    }
-}
-my $rows = 10;
-my $has_right_adminusers = $session{'CurrentUser'}->HasRight(
-    Object => $RT::System, Right => 'AdminUsers'
-);
-$has_right_adminusers &&= $session{'CurrentUser'}->HasRight(
-    Object => $RT::System, Right => 'ShowConfigTab'
-);
 my $people = $Ticket->Requestors->UserMembersObj;
 while ( my $requestor = $people->Next ) {
     next if $requestor->Privileged;
     my $name = $m->scomp('/Elements/ShowUser', User => $requestor);
 
-    my $tickets = RT::Tickets->new( $session{'CurrentUser'} );
-    $tickets->FromSQL( "Requestor.id = ". $requestor->id ." AND (".join( " OR ", map $_->{cond}, @$conditions).")" );
-    $tickets->RowsPerPage( $rows );
-    $tickets->OrderBy( FIELD => 'Priority', ORDER => 'DESC' );
 </%PERL>
 
 <&| /Widgets/TitleBox,
-    title_href => $has_right_adminusers? RT->Config->Get('WebPath')."/Admin/Users/Modify.html?id=".$requestor->id: undef,
-    title_raw => loc("More about [_1]", $name),
-    class => 'ticket-info-requestor'
+    title_href => $has_right_adminusers
+        ? RT->Config->Get('WebPath')."/Admin/Users/Modify.html?id=".$requestor->id
+        : undef,
+    title_raw  => loc("More about [_1]", $name),
+    class      => 'ticket-info-requestor'
 &>
 
 %# Additional information about this user.  Empty by default.
@@ -82,14 +67,21 @@ while ( my $requestor = $people->Next ) {
 <span class="label"><&|/l&>Comments about this user</&>:</span><br />
 <b class="value"><% ($requestor->Comments || loc("No comment entered about this user")) %></b><br />
 
-<span class="label"><&|/l, $rows &>This user's [_1] highest priority tickets</&>:</span>
-<ul>
-%while (my $w=$tickets->Next) {
-%my $uri = RT::URI->new( $session{'CurrentUser'} );
-%$uri->FromObject($w);
-<li class="value"><& /Elements/ShowLink, URI => $uri &></li>
-%}
-</ul>
+<span class="label"><% loc($query_title, $QueryProperties{Rows}) %>:</span>
+
+% my $query = "Requestor.id = ". $requestor->id;
+% $query .= " AND ( $base_query )" if $base_query;
+
+<& /Elements/CollectionList,
+    %QueryProperties,
+
+    Class          => 'RT::Tickets',
+    Query          => $query,
+
+    Page           => 1,
+    AllowSorting   => 0,
+    ShowNavigation => 0,
+&>
 
 <&|/l&>Groups this user belongs to</&>:<br />
 
@@ -99,7 +91,41 @@ while ( my $requestor = $people->Next ) {
 
 % }
 <%ARGS>
-$Ticket=>undef
+$Ticket => undef
 $DisplayPath => "/Ticket/Display.html"
 $conditions => []
 </%ARGS>
+<%INIT>
+unless ( @$conditions ) {
+    foreach (RT::Queue->ActiveStatusArray()) {
+        push @$conditions, { cond => "Status = '$_'", name => loc($_) };
+    }
+}
+my $base_query = '('. join( " OR ", map $_->{cond}, @$conditions ) .')';
+
+my $has_right_adminusers = $session{'CurrentUser'}->HasRight(
+    Object => $RT::System, Right => 'AdminUsers'
+);
+$has_right_adminusers &&= $session{'CurrentUser'}->HasRight(
+    Object => $RT::System, Right => 'ShowConfigTab'
+);
+
+my %QueryProperties = (
+    OrderBy    => 'Priority',
+    Order      => 'DESC',
+    Rows       => 10,
+    ShowHeader => 0,
+    Format     => qq{
+       '<a href="__WebPath__$DisplayPath?id=__id__">__id__</a>',
+       '(__OwnerName__)&nbsp;<a href="__WebPath__$DisplayPath?id=__id__">__Subject__</a>&nbsp;[__Status__]'
+    },
+);
+my $query_title = "This user's [_1] highest priority tickets"; #loc
+
+$m->callback(
+    %ARGS,
+    BaseQuery       => \$base_query,
+    QueryTitle      => \$query_title,
+    QueryProperties => \%QueryProperties,
+);
+</%INIT>
