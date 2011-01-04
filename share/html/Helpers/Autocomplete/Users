@@ -94,7 +94,7 @@ $users->LimitToPrivileged() if $privileged;
 
 while (my ($name, $op) = each %fields) {
     $op = 'STARTSWITH'
-        unless $op =~ /^(?:LIKE|(?:START|END)SWITH)$/i;
+        unless $op =~ /^(?:LIKE|(?:START|END)SWITH|=|!=)$/i;
 
     $users->Limit(
         FIELD           => $name,
