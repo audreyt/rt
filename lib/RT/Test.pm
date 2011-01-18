@@ -1240,6 +1240,7 @@ sub start_plack_server {
              kill 'USR1' => getppid();
          });
 
+    __disconnect_rt();
     my $pid = fork();
     die "failed to fork" unless defined $pid;
 
