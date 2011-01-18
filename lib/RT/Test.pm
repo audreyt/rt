@@ -137,6 +137,8 @@ sub import {
 
     $class->bootstrap_tempdir;
 
+    $class->bootstrap_plugins_paths( %args );
+
     $class->bootstrap_config( %args );
 
     use RT;
@@ -154,10 +156,8 @@ sub import {
     RT::InitClasses();
     RT::InitLogging();
 
-    $class->bootstrap_plugins( %args );
-
     RT->Plugins;
-    
+
     RT::I18N->Init();
     RT->Config->PostLoadCheck;
 
@@ -410,6 +410,8 @@ sub bootstrap_db {
             $RT::Handle->InsertData( $RT::EtcPath . "/initialdata" );
             DBIx::SearchBuilder::Record::Cachable->FlushCache;
         }
+        $self->bootstrap_plugins_db( %args );
+        __reconnect_rt();
     }
 }
 
