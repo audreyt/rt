@@ -413,17 +413,12 @@ sub bootstrap_db {
     }
 }
 
-sub bootstrap_plugins {
+sub bootstrap_plugins_paths {
     my $self = shift;
     my %args = @_;
 
-    my @plugins;
-    push @plugins, @{ $args{'requires'} }
-        if $args{'requires'};
-    push @plugins, $args{'testing'}
-        if $args{'testing'};
-
-    return unless @plugins;
+    return unless $args{'plugins'};
+    my @plugins = @{ $args{'plugins'} };
 
     my $cwd;
     if ( $args{'testing'} ) {
@@ -446,9 +441,11 @@ sub bootstrap_plugins {
         }
         return $old_func->(@_);
     };
+}
 
-    RT->Config->Set( Plugins => @plugins );
-    RT->InitPluginPaths();
+sub bootstrap_plugins_db {
+    my $self = shift;
+    my %args = @_;
 
     my $dba_dbh;
     $dba_dbh = _get_dbh(
