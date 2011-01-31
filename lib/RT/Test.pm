@@ -395,13 +395,9 @@ sub bootstrap_db {
 
         unless ($args{noinitialdata}) {
             $RT::Handle->InsertInitialData;
-
             DBIx::SearchBuilder::Record::Cachable->FlushCache;
         }
 
-        $RT::Handle = RT::Handle->new;
-        $RT::Handle->dbh( undef );
-        RT->ConnectToDatabase();
         $RT::Handle->PrintError;
         $RT::Handle->dbh->{PrintError} = 1;
 
