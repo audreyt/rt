@@ -1203,9 +1203,14 @@ sub start_plack_server {
              kill 'USR1' => getppid();
          });
 
+    # Ensure that we have no db connections open across the fork; we
+    # will re-open them independently in both parent and child
+    RT->DisconnectFromDatabase;
+
     my $pid = fork();
     die "failed to fork" unless defined $pid;
 
+    RT->ConnectToDatabase;
     if ($pid) {
         # We are expecting a USR1 from the child process after it's
         # ready to listen.
@@ -1217,12 +1222,6 @@ sub start_plack_server {
         push @SERVERS, $pid;
         my $Tester = Test::Builder->new;
         $Tester->ok(1, @_);
-
-        $RT::Handle = RT::Handle->new;
-        $RT::Handle->dbh( undef );
-        RT->ConnectToDatabase;
-        # the attribute cache holds on to a stale dbh
-        delete $RT::System->{attributes};
 
         return ("http://localhost:$port", RT::Test::Web->new);
     }

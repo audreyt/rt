@@ -158,6 +158,7 @@ sub find_apache_server {
 sub fork_exec {
     my $self = shift;
 
+    RT->DisconnectFromDatabase;
     my $pid = fork;
     unless ( defined $pid ) {
         die "cannot fork: $!";
@@ -165,6 +166,7 @@ sub fork_exec {
         exec @_;
         die "can't exec `". join(' ', @_) ."` program: $!";
     } else {
+        RT->ConnectToDatabase;
         return $pid;
     }
 }
