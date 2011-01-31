@@ -373,7 +373,7 @@ sub bootstrap_db {
     unless ($args{nodb}) {
         unless ( $ENV{RT_TEST_PARALLEL} ) {
             # already dropped db in parallel tests, need to do so for other cases.
-            RT::Handle->DropDatabase( $dbh, Force => 1 )
+            RT::Handle->DropDatabase( $dbh )
         }
         RT::Handle->CreateDatabase( $dbh );
         $dbh->disconnect;
@@ -1380,7 +1380,7 @@ END {
         $dbh->disconnect if $dbh;
 
         $dbh = _get_dbh( RT::Handle->SystemDSN, $ENV{RT_DBA_USER}, $ENV{RT_DBA_PASSWORD} );
-        RT::Handle->DropDatabase( $dbh, Force => 1 );
+        RT::Handle->DropDatabase( $dbh );
         $dbh->disconnect;
     }
 }
