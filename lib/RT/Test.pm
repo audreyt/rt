@@ -481,7 +481,7 @@ sub bootstrap_plugins {
             Test::More::ok(1, "There is no etc dir: no data" );
         }
 
-        $RT::Handle->Connect; # XXX: strange but mysql can loose connection
+        $RT::Handle->Connect; # XXX: strange but mysql can lose connection
     }
     $dba_dbh->disconnect if $dba_dbh;
 }
