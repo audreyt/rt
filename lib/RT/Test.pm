@@ -389,8 +389,7 @@ sub bootstrap_db {
         my $db_type = RT->Config->Get('DatabaseType');
         $RT::Handle->InsertACL( $dbh ) unless $db_type eq 'Oracle';
 
-        $RT::Handle = RT::Handle->new;
-        $RT::Handle->dbh( undef );
+        RT->DisconnectFromDatabase;
         RT->ConnectToDatabase;
         RT->InitLogging;
 
@@ -1376,10 +1375,9 @@ END {
     if ( $ENV{RT_TEST_PARALLEL} && $created_new_db ) {
 
         # Pg doesn't like if you issue a DROP DATABASE while still connected
-        my $dbh = $RT::Handle->dbh;
-        $dbh->disconnect if $dbh;
+        RT->DisconnectFromDatabase;
 
-        $dbh = _get_dbh( RT::Handle->SystemDSN, $ENV{RT_DBA_USER}, $ENV{RT_DBA_PASSWORD} );
+        my $dbh = _get_dbh( RT::Handle->SystemDSN, $ENV{RT_DBA_USER}, $ENV{RT_DBA_PASSWORD} );
         RT::Handle->DropDatabase( $dbh );
         $dbh->disconnect;
     }

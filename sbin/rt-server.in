@@ -129,10 +129,7 @@ EOF
 }
 
 # we must disconnect DB before fork
-if ($RT::Handle) {
-    $RT::Handle->dbh(undef);
-    undef $RT::Handle;
-}
+RT->DisconnectFromDatabase;
 
 require RT::Interface::Web::Handler;
 my $app = RT::Interface::Web::Handler->PSGIApp;

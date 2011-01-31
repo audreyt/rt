@@ -165,6 +165,19 @@ sub ConnectToDatabase {
     return $Handle;
 }
 
+=head2 DisconnectFromDatabase
+
+Disconnects the current L</Handle>.
+
+=cut
+
+sub DisconnectFromDatabase {
+    $RT::Handle->dbh->disconnect if $RT::Handle and $RT::Handle->dbh;
+    undef $RT::Handle;
+    # the attribute cache holds on to a stale dbh
+    delete $RT::System->{attributes};
+}
+
 =head2 InitLogging
 
 Create the Logger object and set up signal handlers.
