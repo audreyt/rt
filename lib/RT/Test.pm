@@ -378,7 +378,7 @@ sub bootstrap_db {
     unless ($args{nodb}) {
         __create_database();
 
-        __reconnect_rt('dba');
+        __reconnect_rt('as dba');
         $RT::Handle->InsertSchema;
 
         my $db_type = RT->Config->Get('DatabaseType');
@@ -398,6 +398,7 @@ sub bootstrap_db {
             $RT::Handle->InsertData( $RT::EtcPath . "/initialdata" );
             DBIx::SearchBuilder::Record::Cachable->FlushCache;
         }
+
         $self->bootstrap_plugins_db( %args );
         __reconnect_rt();
     }
@@ -459,15 +460,14 @@ sub bootstrap_plugins_db {
             next;
         }
 
+        __reconnect_rt('as dba');
 
         { # schema
-            __reconnect_rt('dba');
             my ($ret, $msg) = $RT::Handle->InsertSchema( undef, $etc_path );
             Test::More::ok($ret || $msg =~ /^Couldn't find schema/, "Created schema: ".($msg||''));
         }
 
         { # ACLs
-            __reconnect_rt('dba');
             my ($ret, $msg) = $RT::Handle->InsertACL( undef, $etc_path );
             Test::More::ok($ret || $msg =~ /^Couldn't find ACLs/, "Created ACL: ".($msg||''));
         }
@@ -554,6 +554,7 @@ sub __reconnect_rt {
 sub __disconnect_rt {
     # look at %DBIHandle and $PrevHandle in DBIx::SB::Handle for explanation
     return unless $RT::Handle;
+
     my $dbh = $RT::Handle->dbh;
     $dbh->disconnect if $dbh;
 
